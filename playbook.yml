@@ -1,0 +1,67 @@
+---
+- hosts: all
+  sudo: yes
+  tasks:
+    - name: Add a new user
+      user: name=t-hara
+    - name: Install libselinux-python
+      yum: name=libselinux-python state=latest
+
+#================================================
+# Install td-agent2
+#================================================
+- hosts:
+    - fluentd
+    - es
+    - nk
+  sudo: yes
+  tasks:
+    - name: Download td-agent2 installer
+      get_url: url=https://td-toolbelt.herokuapp.com/sh/install-redhat-td-agent2.sh dest=/tmp/install-redhat-td-agent2.sh
+    - name: Change mode of td-agent2 installer
+      file: path=/tmp/install-redhat-td-agent2.sh mode="u=rwx,g=rw,o=rw"
+    - name: Execute td-agent2 installer
+      shell: /tmp/install-redhat-td-agent2.sh
+
+#================================================
+# Copy fluentd config files
+#================================================
+- hosts: fluentd
+  sudo: yes
+  tasks:
+    - name: Copy config file
+      copy: src=./files/fluentd-aggregator.conf dest=/etc/td-agent/td-agent.conf
+
+- hosts: es
+  sudo: yes
+  tasks:
+    - name: Copy config file
+      copy: src=./files/fluentd-es.conf dest=/etc/td-agent/td-agent.conf
+
+- hosts: nk
+  sudo: yes
+  tasks:
+    - name: Copy config file
+      copy: src=./files/fluentd-nk.conf dest=/etc/td-agent/td-agent.conf
+
+#================================================
+# Install Elasticsearch
+# ref: http://qiita.com/dayflower/items/21c64a6f5da155a5ade3
+#================================================
+- hosts: es
+  sudo: yes
+  tasks:
+    - name: Install Java
+      yum: name=java-1.8.0 state=latest
+    - name: Download rpm file and install Elasticsearch
+      yum: name=https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.5.2.noarch.rpm state=present
+    - name: Download kibana
+      get_url: url=https://download.elastic.co/kibana/kibana/kibana-4.0.2-linux-x64.tar.gz dest=/tmp/kibana-4.0.2-linux-x64.tar.gz
+    - name: Unarchive kibana.tar.gz
+      command: tar zxf /tmp/kibana-4.0.2-linux-x64.tar.gz
+    - name: Move kibana
+      command: mv /home/vagrant/kibana-4.0.2-linux-x64 /usr/local/bin/
+
+#================================================
+# Install Norikra
+#================================================
