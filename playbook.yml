@@ -109,3 +109,48 @@
 
     - name: Install git
       command: chdir=/tmp/git-2.4.0 make prefix=/usr/local install
+
+#================================================
+# Install Norikra
+#================================================
+- hosts: nk
+  sudo: yes
+  tasks:
+    - name: Install Java
+      yum: name={{item}} state=latest
+      with_items:
+          - java-1.8.0
+          - gcc-c++
+
+- hosts: nk
+  user: vagrant
+  tasks:
+    Install rbenv
+    - name: Clone rbenv.git
+      git: repo=https://github.com/sstephenson/rbenv.git dest=~/.rbenv
+    - name: Clone ruby-build
+      git: repo=https://github.com/sstephenson/ruby-build.git dest=~/.rbenv/plugins/ruby-build
+    - name: edit .bash_profile 1
+      shell: echo 'export PATH=$HOME/.rbenv/bin:$PATH' >> ~/.bash_profile
+    - name: edit .bash_profile 2
+      shell: echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
+    - name: apply .bash_profile
+      shell: source ~/.bash_profile
+
+    Install ruby and jruby
+    - name: install ruby
+      command: $HOME/.rbenv/bin/rbenv install 2.2.2
+    - name: install jruby
+      command: $HOME/.rbenv/bin/rbenv install jruby-1.7.20
+
+    Install norikra
+    - name: make workspace for norikra
+      file: path=~/norikra state=directory owner=vagrant group=vagrant mode=0755
+    - name: copy Gemfile
+      copy: src=./files/Gemfile dest=~/norikra/Gemfile
+    - name: set local ruby version
+      command: chdir=~/norikra $HOME/.rbenv/bin/rbenv local jruby-1.7.20
+    - name: install bundler
+      command: chdir=~/norikra $HOME/.rbenv/versions/jruby-1.7.20/bin/gem install bundler
+    - name: install norikra
+      command: chdir=~/norikra $HOME/.rbenv/versions/jruby-1.7.20/bin/bundle install
