@@ -63,5 +63,49 @@
       command: mv /home/vagrant/kibana-4.0.2-linux-x64 /usr/local/bin/
 
 #================================================
-# Install Norikra
+# Install Git
 #================================================
+- hosts:
+    - nk
+    - git
+  sudo: yes
+  tasks:
+    - name: Install git dependencies packages
+      yum: name={{item}} state=latest
+      with_items:
+        - gcc
+        - curl-devel
+        - expat-devel
+        - gettext-devel
+        - openssl-devel
+        - zlib-devel
+        - perl-ExtUtils-MakeMaker
+
+    - name: Does git source file exists ?
+      command: ls /tmp/git-2.4.0.tar.gz
+      ignore_errors: True
+      register: git_source_exists
+
+    - name: Download git source file
+      get_url: url=https://www.kernel.org/pub/software/scm/git/git-2.4.0.tar.gz dest=/tmp/git-2.4.0.tar.gz
+      when: git_source_exists|failed
+
+    - name: Unarchive git.tar.gz
+      command: chdir=/tmp/ tar zxf git-2.4.0.tar.gz
+      when: git_source_exists|failed
+
+    - name: Is git installed ?
+      command: which git
+      ignore_errors: True
+      register: git_is_installed
+
+    - name: Configure git source
+      command: chdir=/tmp/git-2.4.0 ./configure --prefix=/usr/local
+      when: git_is_installed|failed
+
+    - name: Make git
+      command: chdir=/tmp/git-2.4.0 make prefix=/usr/local all
+      when: git_is_installed
+
+    - name: Install git
+      command: chdir=/tmp/git-2.4.0 make prefix=/usr/local install
