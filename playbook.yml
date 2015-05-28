@@ -136,3 +136,23 @@
       command: chdir=~/norikra $HOME/.rbenv/versions/jruby-1.7.20/bin/gem install bundler
     - name: install norikra
       command: chdir=~/norikra $HOME/.rbenv/versions/jruby-1.7.20/bin/bundle install
+
+#================================================
+# Install Gitbucket
+#================================================
+- hosts: git
+  sudo: yes
+  tasks:
+    - name: Add User for tomcat
+      user: name=tomcat shell=/sbin/nologin
+    - name: Download tomcat
+      get_url: url=http://ftp.yz.yamagata-u.ac.jp/pub/network/apache/tomcat/tomcat-8/v8.0.23/bin/apache-tomcat-8.0.23.tar.gz dest=/tmp/apache-tomcat-8.0.23.tar.gz
+    - name: Unarchive tomcat
+      shell: chdir=/tmp/ tar zxf apache-tomcat-8.0.23.tar.gz
+    - name: Move tomcat
+      shell: mv /tmp/apache-tomcat-8.0.23 /usr/local/tomcat
+
+    - name: Download Gitbucket
+      get_url: url=https://github.com/takezoe/gitbucket/releases/download/3.2/gitbucket.war dest=/usr/local/tomcat/webapps/gitbucket.war
+    - name: Change owner tomcat directory
+      file: path=/usr/local/tomcat owner=tomcat group=tomcat recurse=yes
