@@ -1,6 +1,9 @@
 ---
 - hosts: all
   sudo: yes
+  vars:
+    java_version: 1.8.0
+    git_version: 2.4.0
   tasks:
     - name: Add a new user
       user: name=t-hara
@@ -10,7 +13,7 @@
       with_items:
         - gcc
         - gcc-c++
-        - java-1.8.0
+        - java-{{java_verison}}
         - curl-devel
         - expat-devel
         - gettext-devel
@@ -20,33 +23,34 @@
         - libselinux-python
 
     - name: Check git source file existence
-      command: ls /tmp/git-2.4.0.tar.gz
+      command: ls /tmp/git-{{git_version}}.tar.gz
       ignore_errors: True
       register: git_source_exists
 
     - name: Download git source file
-      get_url: url=https://www.kernel.org/pub/software/scm/git/git-2.4.0.tar.gz dest=/tmp/git-2.4.0.tar.gz
+      get_url: url=https://www.kernel.org/pub/software/scm/git/git-{{git_version}}.tar.gz dest=/tmp/git-{{git_version}}.tar.gz
       when: git_source_exists|failed
 
     - name: Unarchive git.tar.gz
-      command: chdir=/tmp/ tar zxf git-2.4.0.tar.gz
+      command: chdir=/tmp/ tar zxf git-{{git_version}}.tar.gz
       when: git_source_exists|failed
 
     - name: Check git is installed
       command: which git
       ignore_errors: True
       register: git_is_installed
+      sudo: no
 
     - name: Configure git source
-      command: chdir=/tmp/git-2.4.0 ./configure --prefix=/usr/local
+      command: chdir=/tmp/git-{{git_version}} ./configure --prefix=/usr/local
       when: git_is_installed|failed
 
     - name: Make git
-      command: chdir=/tmp/git-2.4.0 make prefix=/usr/local all
+      command: chdir=/tmp/git-{{git_version}} make prefix=/usr/local all
       when: git_is_installed
 
     - name: Install git
-      command: chdir=/tmp/git-2.4.0 make prefix=/usr/local install
+      command: chdir=/tmp/git-{{git_version}} make prefix=/usr/local install
 
 #================================================
 # Install td-agent2
@@ -91,23 +95,29 @@
 #================================================
 - hosts: es
   sudo: yes
+  vars:
+    es_version: 1.5.2
+    kibana_version: 4.0.2
   tasks:
     - name: Download rpm file and install Elasticsearch
-      yum: name=https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.5.2.noarch.rpm state=present
+      yum: name=https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-{{es_version}}.noarch.rpm state=present
     - name: Download kibana
-      get_url: url=https://download.elastic.co/kibana/kibana/kibana-4.0.2-linux-x64.tar.gz dest=/tmp/kibana-4.0.2-linux-x64.tar.gz
+      get_url: url=https://download.elastic.co/kibana/kibana/kibana-{{kibana_version}}-linux-x64.tar.gz dest=/tmp/kibana-{{kibana_version}}-linux-x64.tar.gz
     - name: Unarchive kibana.tar.gz
-      command: tar zxf /tmp/kibana-4.0.2-linux-x64.tar.gz
+      command: tar zxf /tmp/kibana-{{kibana_version}}-linux-x64.tar.gz
     - name: Move kibana
-      command: mv /home/vagrant/kibana-4.0.2-linux-x64 /usr/local/bin/
+      command: mv /home/vagrant/kibana-{{kibana_version}}-linux-x64 /usr/local/bin/
 
 #================================================
 # Install Norikra
 #================================================
 - hosts: nk
   user: vagrant
+  vars:
+    ruby_version: 2.2.2
+    jruby_version: 1.7.20
   tasks:
-    Install rbenv
+    # Install rbenv
     - name: Clone rbenv.git
       git: repo=https://github.com/sstephenson/rbenv.git dest=~/.rbenv
     - name: Clone ruby-build
@@ -119,40 +129,43 @@
     - name: apply .bash_profile
       shell: source ~/.bash_profile
 
-    Install ruby and jruby
+    # Install ruby and jruby
     - name: install ruby
-      command: $HOME/.rbenv/bin/rbenv install 2.2.2
+      command: $HOME/.rbenv/bin/rbenv install {{ruby_version}}
     - name: install jruby
-      command: $HOME/.rbenv/bin/rbenv install jruby-1.7.20
+      command: $HOME/.rbenv/bin/rbenv install jruby-{{jruby_version}}
 
-    Install norikra
+    # Install norikra
     - name: make workspace for norikra
       file: path=~/norikra state=directory owner=vagrant group=vagrant mode=0755
     - name: copy Gemfile
       copy: src=./files/Gemfile dest=~/norikra/Gemfile
     - name: set local ruby version
-      command: chdir=~/norikra $HOME/.rbenv/bin/rbenv local jruby-1.7.20
+      command: chdir=~/norikra $HOME/.rbenv/bin/rbenv local jruby-{{jruby_version}}
     - name: install bundler
-      command: chdir=~/norikra $HOME/.rbenv/versions/jruby-1.7.20/bin/gem install bundler
+      command: chdir=~/norikra $HOME/.rbenv/versions/jruby-{{jruby_version}}/bin/gem install bundler
     - name: install norikra
-      command: chdir=~/norikra $HOME/.rbenv/versions/jruby-1.7.20/bin/bundle install
+      command: chdir=~/norikra $HOME/.rbenv/versions/jruby-{{jruby_version}}/bin/bundle install
 
 #================================================
 # Install Gitbucket
 #================================================
 - hosts: git
   sudo: yes
+  vars:
+    tomcat_version: 8.0.23
+    gb_version: 3.2
   tasks:
     - name: Add User for tomcat
       user: name=tomcat shell=/sbin/nologin
     - name: Download tomcat
-      get_url: url=http://ftp.yz.yamagata-u.ac.jp/pub/network/apache/tomcat/tomcat-8/v8.0.23/bin/apache-tomcat-8.0.23.tar.gz dest=/tmp/apache-tomcat-8.0.23.tar.gz
+      get_url: url=http://ftp.yz.yamagata-u.ac.jp/pub/network/apache/tomcat/tomcat-8/v{{tomcat_version}}/bin/apache-tomcat-{{tomcat_version}}.tar.gz dest=/tmp/apache-tomcat-{{tomcat_version}}.tar.gz
     - name: Unarchive tomcat
-      shell: chdir=/tmp/ tar zxf apache-tomcat-8.0.23.tar.gz
+      shell: chdir=/tmp/ tar zxf apache-tomcat-{{tomcat_version}}.tar.gz
     - name: Move tomcat
-      shell: mv /tmp/apache-tomcat-8.0.23 /usr/local/tomcat
+      shell: mv /tmp/apache-tomcat-{{tomcat_version}} /usr/local/tomcat
 
     - name: Download Gitbucket
-      get_url: url=https://github.com/takezoe/gitbucket/releases/download/3.2/gitbucket.war dest=/usr/local/tomcat/webapps/gitbucket.war
+      get_url: url=https://github.com/takezoe/gitbucket/releases/download/{{gb_version}}/gitbucket.war dest=/usr/local/tomcat/webapps/gitbucket.war
     - name: Change owner tomcat directory
       file: path=/usr/local/tomcat owner=tomcat group=tomcat recurse=yes
