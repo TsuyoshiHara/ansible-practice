@@ -4,21 +4,22 @@
   tasks:
     - name: Add a new user
       user: name=t-hara
-    - name: Install libselinux-python
-      yum: name=libselinux-python state=latest
 
-    - name: Install git dependencies packages
+    - name: Install dependencies packages
       yum: name={{item}} state=latest
       with_items:
         - gcc
+        - gcc-c++
+        - java-1.8.0
         - curl-devel
         - expat-devel
         - gettext-devel
         - openssl-devel
         - zlib-devel
         - perl-ExtUtils-MakeMaker
+        - libselinux-python
 
-    - name: Does git source file exists ?
+    - name: Check git source file existence
       command: ls /tmp/git-2.4.0.tar.gz
       ignore_errors: True
       register: git_source_exists
@@ -31,7 +32,7 @@
       command: chdir=/tmp/ tar zxf git-2.4.0.tar.gz
       when: git_source_exists|failed
 
-    - name: Is git installed ?
+    - name: Check git is installed
       command: which git
       ignore_errors: True
       register: git_is_installed
@@ -91,8 +92,6 @@
 - hosts: es
   sudo: yes
   tasks:
-    - name: Install Java
-      yum: name=java-1.8.0 state=latest
     - name: Download rpm file and install Elasticsearch
       yum: name=https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.5.2.noarch.rpm state=present
     - name: Download kibana
@@ -105,15 +104,6 @@
 #================================================
 # Install Norikra
 #================================================
-- hosts: nk
-  sudo: yes
-  tasks:
-    - name: Install Java
-      yum: name={{item}} state=latest
-      with_items:
-          - java-1.8.0
-          - gcc-c++
-
 - hosts: nk
   user: vagrant
   tasks:
