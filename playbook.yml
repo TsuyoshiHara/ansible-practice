@@ -13,7 +13,7 @@
       with_items:
         - gcc
         - gcc-c++
-        - java-{{java_verison}}
+        - java-{{java_version}}
         - curl-devel
         - expat-devel
         - gettext-devel
