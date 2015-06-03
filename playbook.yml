@@ -107,6 +107,8 @@
       command: tar zxf /tmp/kibana-{{kibana_version}}-linux-x64.tar.gz
     - name: Move kibana
       command: mv /home/vagrant/kibana-{{kibana_version}}-linux-x64 /usr/local/bin/
+    - name: Install fluent-plugin-elasticsearch
+      command: td-agent-gem install fluent-plugin-elasticsearch
 
 #================================================
 # Install Norikra
@@ -146,6 +148,12 @@
       command: chdir=~/norikra $HOME/.rbenv/versions/jruby-{{jruby_version}}/bin/gem install bundler
     - name: install norikra
       command: chdir=~/norikra $HOME/.rbenv/versions/jruby-{{jruby_version}}/bin/bundle install
+
+    # Install fluent-plugins
+    - name: Install fluent-plugin-norikra
+      command: td-agent-gem install fluent-plugin-norikra
+    - name: Install fluent-plugin-elasticsearch
+      command: td-agent-gem install fluent-plugin-elasticsearch
 
 #================================================
 # Install Gitbucket
