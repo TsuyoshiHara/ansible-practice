@@ -3,7 +3,7 @@
   sudo: yes
   vars:
     java_version: 1.8.0
-    git_version: 2.4.0
+    git_version: 2.4.2
   tasks:
     - name: Add a new user
       user: name=t-hara
@@ -28,7 +28,7 @@
       register: git_source_exists
 
     - name: Download git source file
-      get_url: url=https://www.kernel.org/pub/software/scm/git/git-{{git_version}}.tar.gz dest=/tmp/git-{{git_version}}.tar.gz
+      copy: src=./files/packages/git-{{git_version}}.tar.gz dest=/tmp/git-{{git_version}}.tar.gz
       when: git_source_exists|failed
 
     - name: Unarchive git.tar.gz
@@ -99,10 +99,12 @@
     es_version: 1.5.2
     kibana_version: 4.0.2
   tasks:
-    - name: Download rpm file and install Elasticsearch
-      yum: name=https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-{{es_version}}.noarch.rpm state=present
+    - name: Copy rpm file
+      copy: src=./files/packages/elasticsearch-{{es_version}}.noarch.rpm dest=/tmp/elasticsearch-{{es_version}}.noarch.rpm
+    - name: Install Elasticsearch
+      yum: name=/tmp/elasticsearch-{{es_version}}.noarch.rpm
     - name: Download kibana
-      get_url: url=https://download.elastic.co/kibana/kibana/kibana-{{kibana_version}}-linux-x64.tar.gz dest=/tmp/kibana-{{kibana_version}}-linux-x64.tar.gz
+      copy: src=./files/packages/kibana-{{kibana_version}}-linux-x64.tar.gz dest=/tmp/kibana-{{kibana_version}}-linux-x64.tar.gz
     - name: Unarchive kibana.tar.gz
       command: tar zxf /tmp/kibana-{{kibana_version}}-linux-x64.tar.gz
     - name: Move kibana
@@ -152,8 +154,10 @@
     # Install fluent-plugins
     - name: Install fluent-plugin-norikra
       command: td-agent-gem install fluent-plugin-norikra
+      sudo: yes
     - name: Install fluent-plugin-elasticsearch
       command: td-agent-gem install fluent-plugin-elasticsearch
+      sudo: yes
 
 #================================================
 # Install Gitbucket
@@ -166,14 +170,14 @@
   tasks:
     - name: Add User for tomcat
       user: name=tomcat shell=/sbin/nologin
-    - name: Download tomcat
-      get_url: url=http://ftp.yz.yamagata-u.ac.jp/pub/network/apache/tomcat/tomcat-8/v{{tomcat_version}}/bin/apache-tomcat-{{tomcat_version}}.tar.gz dest=/tmp/apache-tomcat-{{tomcat_version}}.tar.gz
+    - name: Copy tomcat
+      copy: src=./files/packages/apache-tomcat-{{tomcat_version}}.tar.gz dest=/tmp/apache-tomcat-{{tomcat_version}}.tar.gz
     - name: Unarchive tomcat
       shell: chdir=/tmp/ tar zxf apache-tomcat-{{tomcat_version}}.tar.gz
     - name: Move tomcat
       shell: mv /tmp/apache-tomcat-{{tomcat_version}} /usr/local/tomcat
 
-    - name: Download Gitbucket
-      get_url: url=https://github.com/takezoe/gitbucket/releases/download/{{gb_version}}/gitbucket.war dest=/usr/local/tomcat/webapps/gitbucket.war
+    - name: Copy Gitbucket
+      copy: src=./files/packages/gitbucket.war dest=/usr/local/tomcat/webapps/gitbucket.war
     - name: Change owner tomcat directory
       file: path=/usr/local/tomcat owner=tomcat group=tomcat recurse=yes
